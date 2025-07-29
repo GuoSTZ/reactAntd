@@ -1,8 +1,38 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol';
+}
+
+.ant-layout-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+}
+
+.ant-layout-sider {
+  overflow: auto;
+  height: calc(100vh - 64px);
+  position: sticky;
+  top: 64px;
+  left: 0;
+}
+
+.demo-section {
+  margin-bottom: 32px;
+}
+
+.demo-section:last-child {
+  margin-bottom: 0;
 }
 
 .logo {
