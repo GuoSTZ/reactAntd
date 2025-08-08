@@ -59,12 +59,11 @@ const Sidebar: React.FC = () => {
     },
     {
       title: '数据展示',
-      key: 'data-display',
+      key: 'display',
       icon: <TableOutlined />,
       children: [
-        { key: 'table', title: 'Table 表格', icon: <TableOutlined /> },
-        { key: 'card', title: 'Card 卡片', icon: <TableOutlined /> },
         { key: 'list', title: 'List 列表', icon: <TableOutlined /> },
+        { key: 'table', title: 'Table 表格', icon: <TableOutlined /> },
       ]
     },
     {

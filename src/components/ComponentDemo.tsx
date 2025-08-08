@@ -1,8 +1,9 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Typography, Divider } from 'antd';
-import ButtonDemo from './demos/ButtonDemo';
-// import FormDemo from './demos/FormDemo';
+import ButtonDemo from './demos/button/base';
+import FormDemo from './demos/form/base';
+import ListDemo from './demos/list/SecurityMonitor';
 // import TableDemo from './demos/TableDemo';
 // import CardDemo from './demos/CardDemo';
 // import AlertDemo from './demos/AlertDemo';
@@ -27,7 +28,8 @@ const ComponentDemo: React.FC = () => {
 
   const componentMap: { [key: string]: { title: string; component: React.ReactNode } } = {
     button: { title: 'Button 按钮', component: <ButtonDemo /> },
-    // form: { title: 'Form 表单', component: <FormDemo /> },
+    form: { title: 'Form 表单', component: <FormDemo /> },
+    list: { title: 'List 列表', component: <ListDemo /> },
     // table: { title: 'Table 表格', component: <TableDemo /> },
     // card: { title: 'Card 卡片', component: <CardDemo /> },
     // alert: { title: 'Alert 警告提示', component: <AlertDemo /> },
