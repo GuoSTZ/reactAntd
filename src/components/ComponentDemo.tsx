@@ -20,6 +20,7 @@ import ListDemo from './demos/list/SecurityMonitor';
 // import MenuDemo from './demos/MenuDemo';
 // import BreadcrumbDemo from './demos/BreadcrumbDemo';
 // import IconDemo from './demos/IconDemo';
+import DragTree from './demos/tree/drag';
 
 const { Title } = Typography;
 
@@ -30,6 +31,7 @@ const ComponentDemo: React.FC = () => {
     button: { title: 'Button 按钮', component: <ButtonDemo /> },
     form: { title: 'Form 表单', component: <FormDemo /> },
     list: { title: 'List 列表', component: <ListDemo /> },
+    dragTree: { title: 'Tree 树', component: <DragTree /> },
     // table: { title: 'Table 表格', component: <TableDemo /> },
     // card: { title: 'Card 卡片', component: <CardDemo /> },
     // alert: { title: 'Alert 警告提示', component: <AlertDemo /> },

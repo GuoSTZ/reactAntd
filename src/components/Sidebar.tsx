@@ -64,6 +64,7 @@ const Sidebar: React.FC = () => {
       children: [
         { key: 'list', title: 'List 列表', icon: <TableOutlined /> },
         { key: 'table', title: 'Table 表格', icon: <TableOutlined /> },
+        { key: 'dragTree', title: 'Tree 树', icon: <TableOutlined /> },
       ]
     },
     {
