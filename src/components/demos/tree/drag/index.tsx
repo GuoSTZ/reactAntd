@@ -1,6 +1,6 @@
-import { Tree } from 'antd';
+import { Tree, message } from 'antd';
 import type { DataNode, TreeProps } from 'antd/es/tree';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const defaultData = [
   {
@@ -127,8 +127,98 @@ const defaultData = [
   }
 ]
 
+// 节点信息接口
+interface NodeInfo {
+  node: DataNode;
+  parent: React.Key | null;
+  children: Set<React.Key>;
+  ancestors: Set<React.Key>;
+  descendants: Set<React.Key>;
+  isLeaf: boolean;
+  level: number;
+}
+
 const App: React.FC = () => {
   const [gData, setGData] = useState(defaultData);
+
+  // 使用 useMemo 缓存节点信息映射表
+  const nodeInfoMap = useMemo(() => {
+    const map = new Map<React.Key, NodeInfo>();
+    
+    // 一次遍历构建完整的节点关系映射
+    const buildNodeMap = (nodes: DataNode[], parent: React.Key | null = null, level: number = 0, ancestors: Set<React.Key> = new Set()) => {
+      nodes.forEach(node => {
+        const children = new Set<React.Key>();
+        const descendants = new Set<React.Key>();
+        
+        // 收集直接子节点
+        if (node.children) {
+          node.children.forEach(child => {
+            children.add(child.key);
+          });
+        }
+        
+        // 创建节点信息
+        const nodeInfo: NodeInfo = {
+          node,
+          parent,
+          children,
+          ancestors: new Set(ancestors),
+          descendants,
+          isLeaf: !node.children || node.children.length === 0,
+          level
+        };
+        
+        map.set(node.key, nodeInfo);
+        
+        // 递归处理子节点
+        if (node.children) {
+          const newAncestors = new Set(ancestors);
+          newAncestors.add(node.key);
+          
+          buildNodeMap(node.children, node.key, level + 1, newAncestors);
+          
+          // 收集所有后代节点
+          node.children.forEach(child => {
+            descendants.add(child.key);
+            const childInfo = map.get(child.key);
+            if (childInfo) {
+              childInfo.descendants.forEach(desc => descendants.add(desc));
+            }
+          });
+        }
+      });
+    };
+    
+    buildNodeMap(gData);
+    return map;
+  }, [gData]);
+
+  // 优化后的检查方法 - 直接通过 Map 查询
+  const getNodeInfo = (key: React.Key): NodeInfo | undefined => {
+    return nodeInfoMap.get(key);
+  };
+
+  const isAncestor = (ancestorKey: React.Key, descendantKey: React.Key): boolean => {
+    const ancestorInfo = getNodeInfo(ancestorKey);
+    return ancestorInfo ? ancestorInfo.descendants.has(descendantKey) : false;
+  };
+
+  const isSameParent = (key1: React.Key, key2: React.Key): boolean => {
+    const info1 = getNodeInfo(key1);
+    const info2 = getNodeInfo(key2);
+    return !!info1 && !!info2 && info1.parent === info2.parent;
+  };
+
+  const hasChildren = (key: React.Key): boolean => {
+    const info = getNodeInfo(key);
+    return info ? !info.isLeaf : false;
+  };
+
+  const getParent = (key: React.Key): React.Key | null => {
+    const info = getNodeInfo(key);
+    return info ? info.parent : null;
+  };
 
   const onDragEnter: TreeProps['onDragEnter'] = info => {
     console.log(info);
@@ -137,11 +227,76 @@ const App: React.FC = () => {
   };
 
   const onDrop: TreeProps['onDrop'] = info => {
-    console.log(info);
+    console.log('Drop info:', info);
+    console.log('dropPosition:', info.dropPosition);
+    console.log('dropToGap:', info.dropToGap);
+    
     const dropKey = info.node.key;
     const dragKey = info.dragNode.key;
     const dropPos = info.node.pos.split('-');
     const dropPosition = info.dropPosition - Number(dropPos[dropPos.length - 1]);
+
+    console.log('Calculated dropPosition:', dropPosition);
+
+    // 使用优化后的方法进行拖拽限制检查
+    // 1. 如果拖拽的是父级节点（有子节点），不能拖拽到任何子级节点下
+    if (hasChildren(dragKey)) {
+      if (isAncestor(dragKey, dropKey)) {
+        message.warning('父级节点不能拖拽到其子级节点下');
+        return;
+      }
+    }
+
+    // 2. 子级节点只能在同一父级下拖拽
+    const dragParent = getParent(dragKey);
+    const dropParent = getParent(dropKey);
+    
+    if (dragParent && dropParent) {
+      if (!isSameParent(dragKey, dropKey)) {
+        message.warning('子级节点只能在同一父级下进行拖拽');
+        return;
+      }
+    }
+
+    // 3. 特殊处理：如果拖拽节点有父级，但要拖拽到不同父级的节点位置
+    if (dragParent && dropParent && dragParent !== dropParent) {
+      message.warning('子级节点不能脱离当前父级');
+      return;
+    }
+
+    // 4. 如果是拖拽到节点内部（不是gap），需要额外检查
+    if (!info.dropToGap) {
+      // 如果拖拽节点有父级，但目标节点不是其父级，则不允许
+      if (dragParent && dragParent !== dropKey) {
+        message.warning('子级节点不能脱离当前父级');
+        return;
+      }
+      // 如果拖拽的是父级节点，不能拖拽到子级内部
+      if (hasChildren(dragKey)) {
+        message.warning('父级节点不能拖拽到其他节点内部');
+        return;
+      }
+    }
+
+    // 5. 新增：处理第一个子节点的特殊情况
+    if (info.dropToGap && dragParent && dropParent) {
+      // 检查是否试图拖拽到不同父级下
+      if (dragParent !== dropParent) {
+        message.warning('子级节点只能在同一父级下进行拖拽');
+        return;
+      }
+      
+      // 如果是拖拽到第一个子节点上方，且dropPosition计算异常
+      const dropNodeInfo = getNodeInfo(dropKey);
+      const dragNodeInfo = getNodeInfo(dragKey);
+      
+      if (dropNodeInfo && dragNodeInfo && 
+          dropNodeInfo.parent && dragNodeInfo.parent &&
+          dropNodeInfo.parent !== dragNodeInfo.parent) {
+        message.warning('子级节点不能脱离当前父级');
+        return;
+      }
+    }
 
     const loop = (
       data: DataNode[],
